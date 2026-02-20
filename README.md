@@ -77,15 +77,15 @@ git clone https://github.com/khanaaaaaa/AnimeGachapon.git
 - Dark mode toggle
 - Anime comparison feature
 
-## 📝 License
+## License
 
 MIT License - feel free to use this project for learning or personal use.
 
-## 🙏 Credits
+## Credits
 
 - Anime data provided by [MyAnimeList](https://myanimelist.net/)
 - API access via [Jikan API](https://jikan.moe/)
-- Built with ❤️ for anime fans
+- Built with love anime fans
 
 ---
 
