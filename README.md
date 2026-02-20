@@ -1,4 +1,6 @@
-# Anime Gachapon 🎰
+# Anime Gachapon
+
+**Live Demo**: https://khanaaaaaa.github.io/AnimeGachapon/
 
 A fun, interactive Gachapon-style anime recommendation website that helps you discover random anime with a delightful capsule machine animation.
 
