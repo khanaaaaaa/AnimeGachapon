@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations - Anime Gachapon</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFF5F7 50%, #FFF8F0 100%);
+            font-family: 'Quicksand', 'Nunito', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        nav { background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); border: 1px solid #FFE4E1; }
+        nav a { color: #8B7355; text-decoration: none; margin: 0 15px; font-weight: 600; }
+        nav a:hover { color: #FFB6C1; text-decoration: underline; }
+        h1 { color: #8B7355; text-align: center; margin: 20px 0; font-weight: bold; font-size: 2.5em; }
+        .search-box { text-align: center; margin: 30px auto; max-width: 600px; }
+        .search-box input { width: 100%; padding: 15px 20px; border: 1px solid #FFE4E1; border-radius: 25px; font-size: 16px; background: white; color: #8B7355; font-weight: 500; }
+        .search-box input:focus { outline: none; box-shadow: 0 0 15px rgba(255, 182, 193, 0.3); }
+        .suggestions { background: white; border: 1px solid #FFE4E1; border-radius: 15px; margin-top: 10px; max-height: 300px; overflow-y: auto; display: none; }
+        .suggestion-item { padding: 15px; cursor: pointer; border-bottom: 1px solid #FFF5F7; color: #8B7355; font-weight: 500; }
+        .suggestion-item:hover { background: #FFF5F7; }
+        .selected-anime { text-align: center; margin: 30px auto; max-width: 400px; }
+        .selected-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #FFE4E1; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
+        .selected-card img { width: 200px; height: 280px; object-fit: cover; border-radius: 15px; margin-bottom: 15px; }
+        .selected-card h3 { color: #8B7355; margin-bottom: 10px; font-size: 18px; }
+        .selected-card .change-btn { margin-top: 15px; background: #FFB6C1; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+        .selected-card .change-btn:hover { background: #FFA0B0; }
+        .loading { color: #A0826D; text-align: center; font-size: 1.5em; padding: 40px; font-weight: 600; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; max-width: 1200px; margin: 30px auto; }
+        .card { background: white; border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 0.3s; border: 1px solid #FFE4E1; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); position: relative; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); }
+        .card .rec-btn { position: absolute; bottom: 10px; right: 10px; background: #FFB6C1; color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 11px; font-weight: 600; cursor: pointer; z-index: 10; }
+        .card .rec-btn:hover { background: #FFA0B0; }
+        .card img { width: 100%; height: 280px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .card-info h3 { color: #8B7355; font-size: 14px; margin-bottom: 8px; font-weight: bold; }
+        .card-info .score { color: #FFB6C1; font-size: 12px; font-weight: 600; }
+        .section-title { color: #8B7355; text-align: center; margin: 30px 0 20px; font-size: 1.8em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Gachapon</a>
+        <a href="browse.html">Browse</a>
+        <a href="recommendations.html">Recommendations</a>
+        <a href="about.html">About</a>
+    </nav>
+    <h1>Get Recommendations</h1>
+    <p style="color: #A0826D; text-align: center; max-width: 600px; margin: 0 auto 10px; font-weight: 500; font-size: 16px;">Find anime similar to your favorites!</p>
+    <p style="color: #A0826D; text-align: center; max-width: 600px; margin: 0 auto 20px; font-weight: 500; font-size: 14px;">Search for any anime below and we'll show you personalized recommendations based on what other fans enjoyed.</p>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Search for an anime..." oninput="searchAnime()">
+        <div class="suggestions" id="suggestions"></div>
+    </div>
+    <div class="selected-anime" id="selected-anime" style="display: none;"></div>
+    <div class="loading" id="loading" style="display: none;">Finding recommendations...</div>
+    <div id="recs-section" style="display: none;">
+        <h2 class="section-title">Similar Anime You Might Like</h2>
+        <div class="grid" id="recommendations"></div>
+    </div>
+    <script>
+        const API = "https://api.jikan.moe/v4";
+        let searchTimeout;
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const animeId = urlParams.get('anime');
+            if (animeId) {
+                selectAnime(parseInt(animeId));
+            }
+        };
+
+        async function searchAnime() {
+            const query = document.getElementById('search').value.trim();
+            if (query.length < 3) {
+                document.getElementById('suggestions').style.display = 'none';
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${API}/anime?q=${encodeURIComponent(query)}&limit=10`);
+                    const data = await res.json();
+                    displaySuggestions(data.data);
+                } catch (error) {
+                    console.error('Search failed');
+                }
+            }, 500);
+        }
+
+        function displaySuggestions(animes) {
+            const suggestionsDiv = document.getElementById('suggestions');
+            if (animes.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            suggestionsDiv.innerHTML = animes.map(anime => 
+                `<div class="suggestion-item" onclick="selectAnime(${anime.mal_id})">${anime.title}</div>`
+            ).join('');
+            suggestionsDiv.style.display = 'block';
+        }
+
+        async function selectAnime(malId) {
+            document.getElementById('suggestions').style.display = 'none';
+            document.getElementById('search').value = '';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('recs-section').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API}/anime/${malId}/full`);
+                const data = await res.json();
+                const anime = data.data;
+
+                document.getElementById('selected-anime').innerHTML = `
+                    <div class="selected-card">
+                        <img src="${anime.images.jpg.image_url}" alt="${anime.title}">
+                        <h3>${anime.title}</h3>
+                        <p style="color: #A0826D; font-weight: 500;">Score: ${anime.score || 'N/A'}</p>
+                        <p style="color: #A0826D; font-weight: 500; font-size: 12px; margin-top: 5px;">${anime.genres.map(g => g.name).slice(0, 3).join(', ')}</p>
+                        <p style="color: #A0826D; font-weight: 500; font-size: 12px;">Episodes: ${anime.episodes || '?'} | ${anime.type}</p>
+                        <button class="change-btn" onclick="document.getElementById('search').focus()">Change Anime</button>
+                    </div>
+                `;
+                document.getElementById('selected-anime').style.display = 'block';
+
+                await loadRecommendations(malId);
+            } catch (error) {
+                document.getElementById('loading').textContent = 'Failed to load anime';
+            }
+        }
+
+        async function loadRecommendations(malId) {
+            try {
+                const res = await fetch(`${API}/anime/${malId}/recommendations`);
+                const data = await res.json();
+                const recs = data.data.slice(0, 12);
+
+                document.getElementById('loading').style.display = 'none';
+                
+                if (recs.length === 0) {
+                    document.getElementById('loading').textContent = 'No recommendations found';
+                    document.getElementById('loading').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('recommendations').innerHTML = recs.map(rec => {
+                    const anime = rec.entry;
+                    return `
+                        <div class="card">
+                            <img src="${anime.images.jpg.image_url}" alt="${anime.title}" onclick="window.open('${anime.url}', '_blank')">
+                            <div class="card-info">
+                                <h3>${anime.title}</h3>
+                                <div class="score">${rec.votes} votes</div>
+                            </div>
+                            <button class="rec-btn" onclick="event.stopPropagation(); selectAnime(${anime.mal_id})">Get Recs</button>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('recs-section').style.display = 'block';
+            } catch (error) {
+                document.getElementById('loading').textContent = 'Failed to load recommendations';
+            }
+        }
+    </script>
+</body>
+</html>

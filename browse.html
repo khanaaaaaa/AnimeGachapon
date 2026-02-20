@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse - Anime Gachapon</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFF5F7 50%, #FFF8F0 100%);
+            font-family: 'Quicksand', 'Nunito', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        nav { background: rgba(255, 255, 255, 0.9); padding: 12px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #FFE4E1; }
+        nav a { color: #8B7355; text-decoration: none; margin: 0 15px; font-weight: 600; }
+        nav a:hover { color: #FFB6C1; text-decoration: underline; }
+        h1 { color: #8B7355; text-align: center; margin: 20px 0; font-weight: bold; font-size: 2em; }
+        .controls { text-align: center; margin: 20px 0; }
+        .lucky-btn {
+            background: #FFB6C1;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+            transition: all 0.2s;
+        }
+        .lucky-btn:hover { transform: scale(1.05); background: #FFA0B0; }
+        .loading { color: #A0826D; text-align: center; font-size: 1.5em; padding: 40px; font-weight: 600; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #FFE4E1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            animation: popIn 0.5s forwards;
+            position: relative;
+        }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); }
+        .card.rank-1::before, .card.rank-2::before, .card.rank-3::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .card.rank-1::before { content: '#1'; background: gold; color: white; }
+        .card.rank-2::before { content: '#2'; background: silver; color: white; }
+        .card.rank-3::before { content: '#3'; background: #cd7f32; color: white; }
+        .card img { width: 100%; height: 280px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .card-info h3 { color: #8B7355; font-size: 14px; margin-bottom: 8px; font-weight: bold; }
+        .card-info .genre { color: #A0826D; font-size: 12px; margin-bottom: 5px; font-weight: 500; }
+        .card-info .score { color: #FFB6C1; font-size: 13px; font-weight: 600; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 248, 240, 0.95);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            max-width: 800px;
+            margin: 50px auto;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+            border: 1px solid #FFE4E1;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .close { position: absolute; top: 15px; right: 20px; color: #A0826D; font-size: 30px; cursor: pointer; font-weight: bold; }
+        .close:hover { color: #FFB6C1; }
+        .modal-body { display: flex; gap: 30px; flex-wrap: wrap; }
+        .modal-body img { width: 250px; height: 350px; object-fit: cover; border-radius: 10px; border: 1px solid #FFE4E1; }
+        .modal-info { color: #8B7355; flex: 1; min-width: 250px; }
+        .modal-info h2 { color: #8B7355; margin-bottom: 15px; font-weight: bold; font-size: 1.5em; }
+        .modal-info p { margin: 10px 0; line-height: 1.6; color: #A0826D; font-weight: 500; }
+        .modal-info a { color: #FFB6C1; text-decoration: none; font-weight: 600; }
+        .modal-info a:hover { text-decoration: underline; }
+    </style>   
+</head>
+<body>
+    <nav>
+        <a href="index.html">Gachapon</a>
+        <a href="browse.html">Browse</a>
+        <a href="recommendations.html">Recommendations</a>
+        <a href="about.html">About</a>
+    </nav>
+    <h1>Top Anime</h1>
+    <div class="controls">
+        <button class="lucky-btn" onclick="feelingLucky()">Feeling Lucky?</button>
+    </div>
+    <div class="loading" id="loading">Loading Anime...</div>
+    <div class="grid" id="grid"></div>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+    <script>
+        const API = "https://api.jikan.moe/v4";
+        let animeList = [];
+        async function loadAnime() {
+            try {
+                const res = await fetch(`${API}/top/anime?limit=25`);
+                const data = await res.json();
+                animeList = data.data;
+                displayGrid();
+            } catch (error) {
+                document.getElementById('loading').textContent = 'Failed to load anime';
+            }
+        }
+
+        function displayGrid() {
+            document.getElementById('loading').style.display = 'none';
+            const grid = document.getElementById('grid');
+            grid.innerHTML = animeList.map((anime, idx) => {
+                const genres = anime.genres.map(g => g.name).slice(0,2).join(', ');
+                const rankClass = idx < 3 ? `rank-${idx + 1}` : '';
+                return `
+                    <div class="card ${rankClass}" onclick="showModal(${idx})" style="animation-delay: ${idx * 0.05}s">
+                        <img src="${anime.images.jpg.image_url}" alt="${anime.title}">
+                        <div class="card-info">
+                            <h3>${anime.title}</h3>
+                            <div class="genre">${genres}</div>
+                            <div class="score">Score: ${anime.score || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function feelingLucky() {
+            const randomPage = Math.floor(Math.random() * 20) + 1;
+            try {
+                const res = await fetch(`${API}/random/anime`);
+                const data = await res.json();
+                const randomAnime = data.data;
+                document.getElementById('modal-body').innerHTML = `
+                    <img src="${randomAnime.images.jpg.large_image_url}" alt="${randomAnime.title}">
+                    <div class="modal-info">
+                        <h2>${randomAnime.title}</h2>
+                        <p><strong>Genres:</strong> ${randomAnime.genres.map(g => g.name).join(', ')}</p>
+                        <p><strong>Score:</strong> ${randomAnime.score || 'N/A'}</p>
+                        <p><strong>Episodes:</strong> ${randomAnime.episodes || 'Unknown'}</p>
+                        <p><strong>Status:</strong> ${randomAnime.status}</p>
+                        <p><strong>Type:</strong> ${randomAnime.type}</p>
+                        <p><strong>Synopsis:</strong> ${randomAnime.synopsis || 'No synopsis available'}</p>
+                        <p><a href="${randomAnime.url}" target="_blank" rel="noopener">View on MyAnimeList →</a></p>
+                    </div>
+                `;
+                document.getElementById('modal').style.display = 'block';
+            } catch (error) {
+                alert('Failed to get random anime. Try again!');
+            }
+        }
+
+        function showModal(index) {
+            const anime = animeList[index];
+            const genres = anime.genres.map(g => g.name).join(', ');
+            const synopsis = anime.synopsis || 'No synopsis available';
+            document.getElementById('modal-body').innerHTML = `
+                <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}">
+                <div class="modal-info">
+                    <h2>${anime.title}</h2>
+                    <p><strong>Genres:</strong> ${genres}</p>
+                    <p><strong>Score:</strong> ${anime.score || 'N/A'}</p>
+                    <p><strong>Episodes:</strong> ${anime.episodes || 'Unknown'}</p>
+                    <p><strong>Status:</strong> ${anime.status}</p>
+                    <p><strong>Type:</strong> ${anime.type}</p>
+                    <p><strong>Synopsis:</strong> ${synopsis}</p>
+                    <p><a href="${anime.url}" target="_blank" rel="noopener">View on MyAnimeList →</a></p>
+                    <p><button onclick="getRecommendations(${anime.mal_id})" style="background: #FFB6C1; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; margin-top: 10px;">Get Recommendations</button></p>
+                </div>
+            `;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function getRecommendations(malId) {
+            window.location.href = `recommendations.html?anime=${malId}`;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) closeModal();
+        }
+
+        loadAnime();
+    </script>
+</body>
+</html>
