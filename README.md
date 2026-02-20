@@ -10,6 +10,8 @@ A fun, interactive Gachapon-style anime recommendation website that helps you di
 - **Random Anime Discovery** - Get truly random anime recommendations from MyAnimeList
 - **Browse Top Anime** - Explore the top 25 rated anime with rank badges
 - **Personalized Recommendations** - Search any anime and get similar recommendations
+- **Anime Comparison** - Compare two anime side by side with detailed stats
+- **Dark Mode Toggle** - Switch between light and dark themes on all pages
 - **Feeling Lucky Button** - Get instant random anime on the browse page
 - **Streaming Links** - Direct links to where you can watch the anime
 - **Fully Responsive** - Works seamlessly on mobile, tablet, and desktop
@@ -33,7 +35,8 @@ A fun, interactive Gachapon-style anime recommendation website that helps you di
 1. **Gachapon** - Main page with animated capsule machine for random anime
 2. **Browse** - Grid view of top 25 anime with rank badges and "Feeling Lucky" button
 3. **Recommendations** - Search anime and discover similar titles
-4. **About** - Information about the project
+4. **Compare** - Side-by-side anime comparison with detailed statistics
+5. **About** - Information about the project
 
 ## How to Use
 
@@ -68,14 +71,6 @@ git clone https://github.com/khanaaaaaa/AnimeGachapon.git
 ```
 
 2. Open `index.html` in your browser - no build process needed!
-
-## Future Enhancements
-
-- User favorites/watchlist
-- Filter by genre, year, or rating
-- Share recommendations via URL
-- Dark mode toggle
-- Anime comparison feature
 
 ## License
 

@@ -6,35 +6,60 @@
     <title>About - Anime Gachapon</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-gradient-1: #FFF8F0;
+            --bg-gradient-2: #FFF5F7;
+            --card-bg: white;
+            --text-primary: #8B7355;
+            --text-secondary: #A0826D;
+            --accent: #FFB6C1;
+            --border: #FFE4E1;
+        }
+        body.dark {
+            --bg-gradient-1: #1a1a1a;
+            --bg-gradient-2: #2d2d2d;
+            --card-bg: #2a2a2a;
+            --text-primary: #e0d5c7;
+            --text-secondary: #c4b5a3;
+            --accent: #ff8fa3;
+            --border: #444;
+        }
         body { 
-            background: linear-gradient(135deg, #FFF8F0 0%, #FFF5F7 50%, #FFF8F0 100%);
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-1) 100%);
             font-family: 'Quicksand', 'Nunito', sans-serif;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
+            transition: background 0.3s;
         }
-        nav { background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); border: 1px solid #FFE4E1; }
-        nav a { color: #8B7355; text-decoration: none; margin: 0 15px; font-weight: 600; }
-        nav a:hover { color: #FFB6C1; text-decoration: underline; }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; z-index: 100; }
+        nav { background: var(--card-bg); padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
+        nav a { color: var(--text-primary); text-decoration: none; margin: 0 15px; font-weight: 600; }
+        nav a:hover { color: var(--accent); text-decoration: underline; }
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: white;
+            background: var(--card-bg);
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid #FFE4E1;
+            border: 1px solid var(--border);
         }
-        h1 { color: #8B7355; margin-bottom: 20px; font-weight: bold; }
-        h2 { color: #FFB6C1; margin-top: 30px; margin-bottom: 15px; font-weight: bold; }
-        p { color: #A0826D; line-height: 1.8; margin-bottom: 15px; font-weight: 500; }
-        ul { color: #A0826D; margin-left: 20px; line-height: 1.8; font-weight: 500; }
+        h1 { color: var(--text-primary); margin-bottom: 20px; font-weight: bold; }
+        h2 { color: var(--accent); margin-top: 30px; margin-bottom: 15px; font-weight: bold; }
+        p { color: var(--text-secondary); line-height: 1.8; margin-bottom: 15px; font-weight: 500; }
+        ul { color: var(--text-secondary); margin-left: 20px; line-height: 1.8; font-weight: 500; }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
     <nav>
         <a href="index.html">Gachapon</a>
         <a href="browse.html">Browse</a>
         <a href="recommendations.html">Recommendations</a>
+        <a href="compare.html">Compare</a>
         <a href="about.html">About</a>
     </nav>
     <div class="container">
@@ -64,5 +89,17 @@
             <li>Quick recommendations when you're indecisive</li>
         </ul>
     </div>
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = document.body.classList.contains('dark') ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.querySelector('.theme-toggle').textContent = '☀️ Light Mode';
+        }
+    </script>
 </body>
 </html>

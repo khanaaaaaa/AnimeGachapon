@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Anime - Anime Gachapon</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-gradient-1: #FFF8F0;
+            --bg-gradient-2: #FFF5F7;
+            --card-bg: white;
+            --text-primary: #8B7355;
+            --text-secondary: #A0826D;
+            --accent: #FFB6C1;
+            --accent-hover: #FFA0B0;
+            --border: #FFE4E1;
+        }
+        body.dark {
+            --bg-gradient-1: #1a1a1a;
+            --bg-gradient-2: #2d2d2d;
+            --card-bg: #2a2a2a;
+            --text-primary: #e0d5c7;
+            --text-secondary: #c4b5a3;
+            --accent: #ff8fa3;
+            --accent-hover: #ff7a91;
+            --border: #444;
+        }
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-1) 100%);
+            font-family: 'Quicksand', 'Nunito', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; z-index: 100; }
+        nav { background: var(--card-bg); padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
+        nav a { color: var(--text-primary); text-decoration: none; margin: 0 15px; font-weight: 600; }
+        nav a:hover { color: var(--accent); text-decoration: underline; }
+        h1 { color: var(--text-primary); text-align: center; margin: 20px 0; font-weight: bold; font-size: 2.5em; }
+        .intro { color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto 30px; font-weight: 500; }
+        .search-container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto 30px; flex-wrap: wrap; justify-content: center; }
+        .search-box { flex: 1; min-width: 300px; max-width: 500px; }
+        .search-box input { width: 100%; padding: 15px; border: 1px solid var(--border); border-radius: 25px; background: var(--card-bg); color: var(--text-primary); font-weight: 500; }
+        .suggestions { background: var(--card-bg); border: 1px solid var(--border); border-radius: 15px; margin-top: 10px; max-height: 300px; overflow-y: auto; display: none; }
+        .suggestion-item { padding: 15px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+        .suggestion-item:hover { background: var(--bg-gradient-2); }
+        .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .anime-card { background: var(--card-bg); border-radius: 20px; padding: 30px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
+        .anime-card img { width: 100%; max-width: 250px; height: 350px; object-fit: cover; border-radius: 15px; margin: 0 auto 20px; display: block; }
+        .anime-card h2 { color: var(--text-primary); margin-bottom: 15px; text-align: center; }
+        .anime-card .stat { margin: 10px 0; color: var(--text-secondary); }
+        .anime-card .stat strong { color: var(--text-primary); }
+        .anime-card .score-big { font-size: 3em; color: var(--accent); text-align: center; font-weight: bold; margin: 20px 0; }
+        .loading { color: var(--text-secondary); text-align: center; padding: 40px; font-weight: 600; }
+        .clear-btn { background: var(--text-secondary); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; margin-top: 15px; width: 100%; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+    <nav>
+        <a href="index.html">Gachapon</a>
+        <a href="browse.html">Browse</a>
+        <a href="recommendations.html">Recommendations</a>
+        <a href="compare.html">Compare</a>
+        <a href="about.html">About</a>
+    </nav>
+    <h1>Compare Anime</h1>
+    <p class="intro">Search and compare two anime side by side to see their stats, ratings, and details!</p>
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" id="search1" placeholder="Search first anime..." oninput="searchAnime(1)">
+            <div class="suggestions" id="suggestions1"></div>
+        </div>
+        <div class="search-box">
+            <input type="text" id="search2" placeholder="Search second anime..." oninput="searchAnime(2)">
+            <div class="suggestions" id="suggestions2"></div>
+        </div>
+    </div>
+    <div class="comparison" id="comparison"></div>
+    <script>
+        const API = "https://api.jikan.moe/v4";
+        let searchTimeout;
+        let anime1 = null, anime2 = null;
+
+        async function searchAnime(slot) {
+            const query = document.getElementById(`search${slot}`).value.trim();
+            if (query.length < 3) {
+                document.getElementById(`suggestions${slot}`).style.display = 'none';
+                return;
+            }
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${API}/anime?q=${encodeURIComponent(query)}&limit=10`);
+                    const data = await res.json();
+                    displaySuggestions(data.data, slot);
+                } catch (error) {
+                    console.error('Search failed');
+                }
+            }, 500);
+        }
+
+        function displaySuggestions(animes, slot) {
+            const suggestionsDiv = document.getElementById(`suggestions${slot}`);
+            if (animes.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            suggestionsDiv.innerHTML = animes.map(anime => 
+                `<div class="suggestion-item" onclick="selectAnime(${anime.mal_id}, ${slot})">${anime.title}</div>`
+            ).join('');
+            suggestionsDiv.style.display = 'block';
+        }
+
+        async function selectAnime(malId, slot) {
+            document.getElementById(`suggestions${slot}`).style.display = 'none';
+            document.getElementById(`search${slot}`).value = '';
+            try {
+                const res = await fetch(`${API}/anime/${malId}/full`);
+                const data = await res.json();
+                if (slot === 1) anime1 = data.data;
+                else anime2 = data.data;
+                displayComparison();
+            } catch (error) {
+                console.error('Failed to load anime');
+            }
+        }
+
+        function displayComparison() {
+            const comparison = document.getElementById('comparison');
+            comparison.innerHTML = '';
+            
+            if (anime1) {
+                comparison.innerHTML += createAnimeCard(anime1, 1);
+            }
+            if (anime2) {
+                comparison.innerHTML += createAnimeCard(anime2, 2);
+            }
+        }
+
+        function createAnimeCard(anime, slot) {
+            return `
+                <div class="anime-card">
+                    <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}">
+                    <h2>${anime.title}</h2>
+                    <div class="score-big">${anime.score || 'N/A'}</div>
+                    <div class="stat"><strong>Type:</strong> ${anime.type}</div>
+                    <div class="stat"><strong>Episodes:</strong> ${anime.episodes || 'Unknown'}</div>
+                    <div class="stat"><strong>Status:</strong> ${anime.status}</div>
+                    <div class="stat"><strong>Aired:</strong> ${anime.aired?.string || 'N/A'}</div>
+                    <div class="stat"><strong>Genres:</strong> ${anime.genres.map(g => g.name).join(', ')}</div>
+                    <div class="stat"><strong>Studios:</strong> ${anime.studios.map(s => s.name).join(', ') || 'N/A'}</div>
+                    <div class="stat"><strong>Popularity:</strong> #${anime.popularity}</div>
+                    <div class="stat"><strong>Members:</strong> ${anime.members?.toLocaleString()}</div>
+                    <button class="clear-btn" onclick="clearSlot(${slot})">Clear</button>
+                </div>
+            `;
+        }
+
+        function clearSlot(slot) {
+            if (slot === 1) anime1 = null;
+            else anime2 = null;
+            displayComparison();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = document.body.classList.contains('dark') ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.querySelector('.theme-toggle').textContent = '☀️ Light Mode';
+        }
+    </script>
+</body>
+</html>
